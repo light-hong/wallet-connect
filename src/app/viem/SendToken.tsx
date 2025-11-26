@@ -2,12 +2,11 @@
 
 import { Button, Field, Input, Label } from '@headlessui/react'
 import { useState } from 'react'
-import { createWalletClient, custom, parseEther } from 'viem'
-import { sepolia } from 'viem/chains'
-import { useAccount, useWalletClient } from 'wagmi'
+import { parseEther } from 'viem'
+import { type Account } from 'viem'
+import { useSharedData } from './ClientContext'
 export default function SendToken() {
-  const { address, isConnected } = useAccount()
-  const { data: walletClient } = useWalletClient()
+  const { walletClient, address } = useSharedData()
   const [ethNumber, setEthNumber] = useState<number | string>('')
 
   const [sendAddress, setSendAddress] = useState<string>('')
@@ -20,13 +19,14 @@ export default function SendToken() {
   const handleSendEth = async () => {
     setHash('')
 
-    if (sendAddress && ethNumber && isConnected) {
+    if (sendAddress && ethNumber && address) {
       setPending(true)
       try {
         const hash = await walletClient!.sendTransaction({
-          account: address,
+          account: address as string & (`0x${string}` | Account | null),
           to: sendAddress as `0x${string}`,
           value: parseEther(ethNumber.toString()),
+          chain: undefined
         })
         setHash(hash)
         setPending(false)

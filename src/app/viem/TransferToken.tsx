@@ -4,13 +4,6 @@
 import { Button, Field, Input, Label } from '@headlessui/react'
 import { useEffect, useState } from 'react'
 import {
-  useWalletClient,
-  useAccount,
-  useBalance,
-} from 'wagmi'
-import {
-  createPublicClient,
-  http,
   erc20Abi,
   parseUnits,
   createWalletClient,
@@ -18,6 +11,7 @@ import {
   custom,
 } from 'viem'
 import { sepolia } from 'viem/chains'
+import { useSharedData } from './ClientContext'
 
 interface TokenBalance {
   balance: bigint
@@ -27,11 +21,7 @@ interface TokenBalance {
 }
 
 export default function TransferToken() {
-  const publicClient = createPublicClient({
-    chain: sepolia,
-    transport: http(),
-  })
-  // const walletClient = useWalletClient()
+  const { publicClient, walletClient, address } = useSharedData()
 
   const [contract, setContract] = useState<string>(
     '0x1714c5a713D1D4c32A65f882003D746C2C42cB52',
@@ -87,8 +77,6 @@ export default function TransferToken() {
     }
   }
 
-  const { isConnected, address } = useAccount()
-
   const [amount, setAmount] = useState<number | string>('')
 
   const [sendAddress, setSendAddress] = useState<string>('')
@@ -96,23 +84,25 @@ export default function TransferToken() {
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!contract || !sendAddress || !amount) return
-    const walletClient = createWalletClient({
-      chain: sepolia,
-      transport: custom(window.ethereum),
-    })
-    const [account] = await walletClient.requestAddresses()
-    console.log(account)
-    // const { request } = await publicClient.simulateContract({
-    //   account: address as `0x${string}`,
-    //   address: sendAddress as `0x${string}`,
-    //   abi: erc20Abi,
-    //   functionName: 'transfer',
-    //   args: [
-    //     sendAddress as `0x${string}`,
-    //     parseUnits(amount.toString(), balance?.decimals ?? 18),
-    //   ],
-    // })
-    // await walletClient.writeContract(request)
+    try {
+      setIsSending(true)
+      const { request } = await publicClient.simulateContract({
+        account: address as `0x${string}`,
+        address: contract as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'transfer',
+        args: [
+          sendAddress as `0x${string}`,
+          parseUnits(amount.toString(), balance?.decimals ?? 18),
+        ],
+      })
+      const hash = await walletClient.writeContract(request)
+      setHash(hash)
+      setIsSending(false)
+    } catch (error) {
+      console.log(error);
+      setIsSending(false)
+    }
   }
 
   const handleAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,10 +115,10 @@ export default function TransferToken() {
     setSendAddress(e.target.value)
   }
   useEffect(() => {
-    if (isConnected && address && contract) {
+    if (address && contract) {
       queryBanlance()
     }
-  }, [contract, isConnected, address])
+  }, [contract, address])
 
   return (
     <Field>
@@ -176,12 +166,12 @@ export default function TransferToken() {
           {isSending ? '发送中...' : '发送'}
         </Button>
         <div className="mt-6 space-y-3">
-          {/* {hash && (
+          {hash && (
             <div className="p-3 bg-blue-50 rounded-md">
               <p className="text-sm font-medium text-blue-800">交易已提交</p>
               <p className="text-xs break-all mt-1">{hash}</p>
             </div>
-          )} */}
+          )}
         </div>
       </div>
     </Field>

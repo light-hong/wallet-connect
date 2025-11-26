@@ -2,60 +2,61 @@
 
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import Link from 'next/link'
-// import { usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
-const Header = () => {
-  // const pathname = usePathname()
+interface HeaderProps {
+  showConnectButton?: boolean
+}
+
+const Header = ({ showConnectButton = true }: HeaderProps) => {
+  const pathname = usePathname()
 
   return (
     <div className="flex items-center justify-between px-8 py-4 bg-black border-b border-gray-200 shadow-sm">
-      {/* 左侧标题 */}
-      <div className="flex1 items-center1">
+      <div className="flex items-center">
         <Link
           href="/"
           className="text-xl font-bold text-blue-500 hover:text-blue-600 no-underline"
         >
-          My DApp
+          Wallet Connect
         </Link>
       </div>
 
-      {/* 中间导航链接 */}
-      {/* <nav className="flex1 gap-8 items-center">
+      <nav className="flex gap-8 items-center">
         <Link
-          href="/swap"
+          href="/wagmi"
           className={`px-4 py-2 no-underline font-medium rounded-md transition-all ${
-            pathname === '/swap'
+            pathname === '/wagmi'
               ? 'text-blue-500 bg-blue-50'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
           }`}
         >
-          Swap
+          Wagmi
         </Link>
         <Link
-          href="/pool"
+          href="/viem"
           className={`px-4 py-2 no-underline font-medium rounded-md transition-all ${
-            pathname === '/pool'
+            pathname === '/viem'
               ? 'text-blue-500 bg-blue-50'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
           }`}
         >
-          Pool
+          Viem
         </Link>
         <Link
-          href="/farm"
+          href="/ethers"
           className={`px-4 py-2 no-underline font-medium rounded-md transition-all ${
-            pathname === '/farm'
+            pathname === '/ethers'
               ? 'text-blue-500 bg-blue-50'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
           }`}
         >
-          Farm
+          Ethers
         </Link>
-      </nav> */}
+      </nav>
 
-      {/* 右侧钱包连接按钮 */}
-      <div className="flex1 items-center1">
-        <ConnectButton />
+      <div className="flex items-center w-[400px]">
+        {showConnectButton && <ConnectButton />}
       </div>
     </div>
   )

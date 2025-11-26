@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button, Field, Input, Label } from '@headlessui/react'
 import { useState } from 'react'
-import { useAccount } from 'wagmi'
 import { erc20Abi, formatUnits } from 'viem'
 import { publicClient } from '@/client'
+import { useSharedData } from './ClientContext'
 
 interface TokenBalance {
   balance: bigint
@@ -12,7 +12,7 @@ interface TokenBalance {
   decimals?: number
 }
 export default function CallBalanceof() {
-  const { address, isConnected } = useAccount()
+  const { address } = useSharedData()
   const [contractAddress, setContractAddress] = useState<string>(
     '0x1714c5a713D1D4c32A65f882003D746C2C42cB52',
   )
@@ -84,7 +84,7 @@ export default function CallBalanceof() {
       <Button
         className="ml-3 rounded bg-sky-600 px-4 py-2 text-sm text-white data-active:bg-sky-700 data-hover:bg-sky-500 data-disabled:bg-gray-500 data-disabled:cursor-not-allowed"
         onClick={handleQuery}
-        disabled={isLoading || !contractAddress || !isConnected}
+        disabled={isLoading || !contractAddress || !address}
       >
         {isLoading ? '查询中...' : '查询'}
       </Button>

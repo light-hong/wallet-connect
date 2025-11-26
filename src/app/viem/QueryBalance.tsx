@@ -1,13 +1,15 @@
 import { Button, Field, Input, Label } from '@headlessui/react'
 import { useState } from 'react'
 import { formatEther } from 'viem'
-import { publicClient } from '@/client'
+import { useSharedData } from './ClientContext'
 export default function QueryBalance() {
   const [queryAddress, setQueryAddress] = useState<string>('')
 
   const [balance, setBalance] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>('')
+
+  const { publicClient } = useSharedData()
 
   const fetchBalance = async () => {
     if (!queryAddress || !publicClient) return

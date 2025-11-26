@@ -3,7 +3,7 @@
 import { WagmiProvider } from 'wagmi'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
-import config from '@/rinbowKitConfig'
+import config from '@/rainbowKitConfig'
 import '@rainbow-me/rainbowkit/styles.css'
 
 export function Providers({ children }: { children: React.ReactNode }) {

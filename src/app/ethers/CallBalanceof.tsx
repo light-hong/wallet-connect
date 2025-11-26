@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Button, Field, Input, Label } from '@headlessui/react'
 import { useState } from 'react'
-import { erc20Abi, formatUnits } from 'viem'
-import { useSharedData } from './ClientContext'
+import { erc20Abi } from 'viem'
+import { parseEther, formatUnits, Contract } from 'ethers'
+import { useSharedData } from './EthersContext'
 
 interface TokenBalance {
   balance: bigint
@@ -11,7 +12,7 @@ interface TokenBalance {
   decimals?: number
 }
 export default function CallBalanceof() {
-  const { publicClient, address } = useSharedData()
+  const { provider, signer } = useSharedData()
   const [contractAddress, setContractAddress] = useState<string>(
     '0x1714c5a713D1D4c32A65f882003D746C2C42cB52',
   )
@@ -20,34 +21,22 @@ export default function CallBalanceof() {
   const [error, setError] = useState('')
 
   const handleQuery = async () => {
-    if (!publicClient || !contractAddress) return
+    if (!contractAddress) return
 
     setIsLoading(true)
     setError('')
     setBalance(null)
     try {
-      const balanceResult = await publicClient.readContract({
-        address: contractAddress as `0x${string}`,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [address as `0x${string}`],
-      })
-      const [symbol, decimals] = await Promise.all([
-        publicClient
-          .readContract({
-            address: contractAddress as `0x${string}`,
-            abi: erc20Abi,
-            functionName: 'symbol',
-          })
-          .catch(() => 'UNKNOWN'),
-        publicClient
-          .readContract({
-            address: contractAddress as `0x${string}`,
-            abi: erc20Abi,
-            functionName: 'decimals',
-          })
-          .catch(() => 18),
-      ])
+      const contract = new Contract(contractAddress, erc20Abi, provider)
+
+      const symbol = await contract.symbol()
+
+      const decimals = await contract.decimals()
+
+      const balanceResult = await contract.balanceOf(signer?.getAddress())
+
+
+      formatUnits(balanceResult, decimals)
 
       const formattedBalance = formatUnits(
         balanceResult as bigint,
@@ -83,7 +72,7 @@ export default function CallBalanceof() {
       <Button
         className="ml-3 rounded bg-sky-600 px-4 py-2 text-sm text-white data-active:bg-sky-700 data-hover:bg-sky-500 data-disabled:bg-gray-500 data-disabled:cursor-not-allowed"
         onClick={handleQuery}
-        disabled={isLoading || !contractAddress || !address}
+        disabled={isLoading || !contractAddress}
       >
         {isLoading ? '查询中...' : '查询'}
       </Button>

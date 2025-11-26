@@ -12,8 +12,8 @@ export default function WagmiHome() {
         <QueryBalance />
         <SendToken />
         <CallBalanceof />
-        <ListenTransfer />
         <TransferToken />
+        <ListenTransfer />
       </div>
     </div>
   )

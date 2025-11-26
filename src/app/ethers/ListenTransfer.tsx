@@ -1,10 +1,11 @@
 import { Field, Input, Label } from '@headlessui/react'
 import { useEffect, useState } from 'react'
 import { erc20Abi } from 'viem'
-import { useSharedData } from './ClientContext'
+import { formatEther, formatUnits, Contract, EventLog, Log } from 'ethers'
+import { useSharedData } from './EthersContext'
 import Link from 'next/link'
 export default function ListenTransfer() {
-  const { publicClient } = useSharedData()
+  const { provider, signer } = useSharedData()
   const [contractAddress] = useState<string>(
     '0x1714c5a713D1D4c32A65f882003D746C2C42cB52',
   )
@@ -12,38 +13,53 @@ export default function ListenTransfer() {
   const [logs, setLogs] = useState<object[]>([])
 
   useEffect(() => {
+    if (!contractAddress || !provider) return
 
-    if (!contractAddress) return
-    const unwatch = publicClient.watchContractEvent({
-      address: contractAddress as `0x${string}`,
-      abi: erc20Abi,
-      eventName: 'Transfer',
-      onLogs: (logs) => {
-        console.log(logs)
-        if (Array.isArray(logs)) {
-          const list = logs.map((log) => {
+    let lastBlock = 0
+    const contract = new Contract(contractAddress, erc20Abi, provider)
+
+    const interval = setInterval(async () => {
+      try {
+        const currentBlock = await provider.getBlockNumber()
+
+        if (lastBlock === 0) {
+          lastBlock = currentBlock
+          return
+        }
+
+        if (currentBlock > lastBlock) {
+          const events = await contract.queryFilter(
+            'Transfer',
+            lastBlock,
+            currentBlock,
+          )
+
+          const newLogs = events.map((event: EventLog | Log) => {
+            // 确保我们能够正确访问事件参数
+            const args =
+              'args' in event && event.args ? event.args : ['', '', BigInt(0)]
             return {
-              hash: log.transactionHash,
-              from: log.args.from,
-              to: log.args.to,
-              value: log.args.value?.toString() || '0',
-              blockNumber: log.blockNumber,
-              logIndex: log.logIndex,
+              hash: event.transactionHash,
+              from: args[0],
+              to: args[1],
+              value: formatEther(args[2] || 0),
+              blockNumber: event.blockNumber,
             }
           })
-          setLogs((prevLogs) => [...list, ...prevLogs])
-        }
-      },
-    })
-    return () => {
-      unwatch()
-    }
-  }, [contractAddress])
 
-  const formatValue = (value: string) => {
-    const num = BigInt(value)
-    return (Number(num) / 1e18).toFixed(4)
-  }
+          if (newLogs.length > 0) {
+            setLogs((prev) => [...newLogs, ...prev])
+          }
+
+          lastBlock = currentBlock
+        }
+      } catch (error) {
+        console.error('轮询错误:', error)
+      }
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [contractAddress, provider])
 
   const shortenAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`
@@ -82,9 +98,7 @@ export default function ListenTransfer() {
                 <span className="font-mono">{shortenAddress(log.from)}</span>
                 <span className="mx-2">→</span>
                 <span className="font-mono">{shortenAddress(log.to)}</span>
-                <span className="ml-3 font-medium">
-                  {formatValue(log.value)}
-                </span>
+                <span className="ml-3 font-medium">{log.value}</span>
               </div>
             </div>
           ))
